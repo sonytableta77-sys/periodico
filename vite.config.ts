@@ -16,8 +16,8 @@ export default defineConfig(() => {
       emptyOutDir: true,
       rollupOptions: {
         output: {
+          inlineDynamicImports: true,
           entryFileNames: 'assets/index.js',
-          chunkFileNames: 'assets/[name].js',
           assetFileNames: 'assets/[name].[ext]'
         }
       }

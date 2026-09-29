@@ -4,9 +4,9 @@ import {
   logoutAdmin,
   initializeAuthStorage
 } from './lib/auth';
-import { DecoratedBorders, BorderStyle } from './components/DecoratedBorders';
-import { WornInkText, InkWearLevel, TypewriterFont, TextAlignment } from './components/WornInkText';
-import { AdminToolbar, PaperTone } from './components/AdminToolbar';
+import { DecoratedBorders } from './components/DecoratedBorders';
+import { WornInkText } from './components/WornInkText';
+import { AdminToolbar } from './components/AdminToolbar';
 import { AuthModal } from './components/AuthModal';
 import paperTexture from './assets/images/vintage_sepia_paper_1790671247445.jpg';
 import { Lock, Feather, Check, AlertCircle } from 'lucide-react';
@@ -16,17 +16,8 @@ const LEGACY_STORAGE_KEY = 'sepia_newspaper_page_v1';
 
 interface PageConfig {
   text: string;
-  inkWear: InkWearLevel;
-  typewriterFont: TypewriterFont;
-  fontSize: number;
-  paperTone: PaperTone;
-  borderStyle: BorderStyle;
-  alignment: TextAlignment;
-  enableDropCap: boolean;
-  showHeader: boolean;
   newspaperTitle: string;
-  newspaperSubhead: string;
-  newspaperDate: string;
+  lastEdited: string;
 }
 
 const DEFAULT_CONFIG: PageConfig = {
@@ -39,17 +30,8 @@ A las siete y doce de la tarde, don Aurelio comprendió que el péndulo del relo
 Don Aurelio levantó la vista por encima de sus lentes de carey. En la mesa de nogal, una pequeña caja de música comenzó a girar por sí sola, liberando una melodía que nadie había compuesto jamás. El relojero sonrió con la templanza de quien conoce los pliegues secretos del tiempo y, tomando su pinza de precisión, respondió:
 
 —Tome asiento, amigo mío. La ficción tiene paciencia infinita, y la verdad siempre llega con retraso.`,
-  inkWear: 'standard',
-  typewriterFont: 'special-elite',
-  fontSize: 18,
-  paperTone: 'sepia',
-  borderStyle: 'victorian',
-  alignment: 'left',
-  enableDropCap: true,
-  showHeader: true,
   newspaperTitle: 'MICRORELATOS',
-  newspaperSubhead: 'EDICIÓN EXTRAORDINARIA · HISTORIAS DE FICCIÓN Y MISTERIO',
-  newspaperDate: 'CRÓNICA LITERARIA · PRECIO: DIEZ CÉNTIMOS'
+  lastEdited: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()
 };
 
 const SAMPLE_TEXTS = {
@@ -65,7 +47,7 @@ El revisor, con uniforme de paño azul y ojos cansados de descifrar silencios, p
 —Próxima parada: las palabras que debiste pronunciar a tiempo.`,
   literary: `MICRORELATO: LA SOMBRA DE LA TINTA.
 
-Aquella mañana, el tipógrafo descubrió que las letras de plomo se movían solas dentro de la caja de composición. Cada vez que intentaba forjar una noticia ordinaria, los tipos se reordenaban para inventar una historia distinta: un faro en mitad del desierto, un marinero que coleccionaba tempestades en frascos de botica y un pájaro de hojalata que solo cantaba cuando alguien mentía por amor.
+Aquella mañana, el tipógrafo descubrú que las letras de plomo se movían solas dentro de la caja de composición. Cada vez que intentaba forjar una noticia ordinaria, los tipos se reordenaban para inventar una historia distinta: un faro en mitad del desierto, un marinero que coleccionaba tempestades en frascos de botica y un pájaro de hojalata que solo cantaba cuando alguien mentía por amor.
 
 Quiso avisar al director del diario, pero al mirarse las manos comprobó que sus yemas ya no estaban manchadas de tinta negra, sino de lluvia fresca de un país que todavía no existía en ningún mapa.`
 };
@@ -78,19 +60,13 @@ export default function App() {
 
   const [config, setConfig] = useState<PageConfig>(() => {
     try {
-      // Purgar inmediatamente cualquier clave de versiones anteriores
       localStorage.removeItem('sepia_newspaper_page_v1');
       localStorage.removeItem('microrelatos_newspaper_page_v2');
 
       const saved = localStorage.getItem(STORAGE_KEY_CONFIG);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Descartar si contiene el título antiguo o texto antiguo
-        if (parsed.newspaperTitle !== 'MICRORELATOS' || (parsed.text && parsed.text.includes('EN LA REDACCIÓN DE LA TARDE'))) {
-          localStorage.removeItem(STORAGE_KEY_CONFIG);
-          return DEFAULT_CONFIG;
-        }
-        return { ...DEFAULT_CONFIG, ...parsed, newspaperTitle: 'MICRORELATOS' };
+        return { ...DEFAULT_CONFIG, ...parsed };
       }
     } catch {
       // ignore
@@ -122,7 +98,20 @@ export default function App() {
   // Guardar configuración en localStorage
   const handleSave = useCallback(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString('es-ES', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      }).toUpperCase();
+      
+      const newConfig = { 
+        ...config, 
+        lastEdited: formattedDate 
+      };
+      
+      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(newConfig));
+      setConfig(newConfig);
       setHasUnsavedChanges(false);
       setSaveToast('Manuscrito guardado correctamente');
       setTimeout(() => setSaveToast(null), 2500);
@@ -164,8 +153,7 @@ export default function App() {
     const textToLoad = SAMPLE_TEXTS[type];
     setConfig(prev => ({ 
       ...prev, 
-      text: textToLoad,
-      newspaperTitle: type === 'initial' ? 'MICRORELATOS' : prev.newspaperTitle
+      text: textToLoad
     }));
     setHasUnsavedChanges(true);
   };
@@ -173,33 +161,6 @@ export default function App() {
   // Imprimir página
   const handlePrint = () => {
     window.print();
-  };
-
-  // Colores de fondo de papel según la tonalidad elegida
-  const getPaperBgColor = () => {
-    switch (config.paperTone) {
-      case 'amber':
-        return '#ece2c4';
-      case 'parchment':
-        return '#f8f4e9';
-      case 'dark-sepia':
-        return '#e4d3b1';
-      case 'sepia':
-      default:
-        return '#f5eedc';
-    }
-  };
-
-  const getInkColor = () => {
-    switch (config.inkWear) {
-      case 'heavy':
-        return '#382f27'; // Tinta desvaída
-      case 'fresh':
-        return '#15110d'; // Tinta negra carbón fresca
-      case 'standard':
-      default:
-        return '#261e17'; // Tinta sepia oscura vintage
-    }
   };
 
   return (
@@ -217,20 +178,6 @@ export default function App() {
             setAuthModalMode('change_password');
             setIsAuthModalOpen(true);
           }}
-          inkWear={config.inkWear}
-          onChangeInkWear={(inkWear) => { setConfig(p => ({ ...p, inkWear })); setHasUnsavedChanges(true); }}
-          typewriterFont={config.typewriterFont}
-          onChangeFont={(typewriterFont) => { setConfig(p => ({ ...p, typewriterFont })); setHasUnsavedChanges(true); }}
-          fontSize={config.fontSize}
-          onChangeFontSize={(fontSize) => { setConfig(p => ({ ...p, fontSize })); setHasUnsavedChanges(true); }}
-          paperTone={config.paperTone}
-          onChangePaperTone={(paperTone) => { setConfig(p => ({ ...p, paperTone })); setHasUnsavedChanges(true); }}
-          borderStyle={config.borderStyle}
-          onChangeBorderStyle={(borderStyle) => { setConfig(p => ({ ...p, borderStyle })); setHasUnsavedChanges(true); }}
-          alignment={config.alignment}
-          onChangeAlignment={(alignment) => { setConfig(p => ({ ...p, alignment })); setHasUnsavedChanges(true); }}
-          enableDropCap={config.enableDropCap}
-          onToggleDropCap={() => { setConfig(p => ({ ...p, enableDropCap: !p.enableDropCap })); setHasUnsavedChanges(true); }}
           onLoadSampleText={handleLoadSample}
           onPrint={handlePrint}
         />
@@ -239,7 +186,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <Feather className="w-4 h-4 text-[#d4ad7f]" />
             <span className="tracking-widest uppercase font-bold text-[#c7af93] text-[11px]">
-              Microrelatos · Crónicas de Ficción
+              Microrelatos
             </span>
           </div>
 
@@ -249,7 +196,6 @@ export default function App() {
               setIsAuthModalOpen(true);
             }}
             className="flex items-center gap-2 px-3.5 py-1.5 bg-[#3a2618] hover:bg-[#4d3320] text-[#f5ebd7] border border-[#6b4c30] rounded-xs transition-all cursor-pointer shadow-sm group"
-            title="Haga clic para iniciar sesión como Redactor y modificar el titular H1, la fecha y el texto"
           >
             <Lock className="w-3.5 h-3.5 text-[#e0b784] group-hover:scale-110 transition-transform" />
             <span className="font-sans font-semibold tracking-wide text-xs">
@@ -270,9 +216,9 @@ export default function App() {
       {/* 2. CONTENEDOR DE LA PÁGINA PERIÓDICO ANTIGUO */}
       <main className="flex-1 flex items-center justify-center p-3 sm:p-6 md:p-10">
         <article
-          className="print-page relative w-full max-w-[960px] min-h-[920px] rounded-[1px] paper-deckle-edge transition-colors duration-500 overflow-hidden flex flex-col"
+          className="print-page relative w-full max-w-[800px] min-h-[920px] rounded-[1px] paper-deckle-edge transition-colors duration-500 overflow-hidden flex flex-col"
           style={{
-            backgroundColor: getPaperBgColor()
+            backgroundColor: '#f5eedc'
           }}
         >
           {/* Capa de textura de papel antiguo generado con Zero-Broken-Image fallback */}
@@ -291,128 +237,52 @@ export default function App() {
           />
 
           {/* MARCO Y BORDES DECORADOS */}
-          <DecoratedBorders style={config.borderStyle}>
+          <DecoratedBorders style="simple">
             {/* ENCABEZADO DE PERIÓDICO DE ÉPOCA (EDITABLE POR EL REDACTOR) */}
-            {config.showHeader && (
-              <header className="mb-6 pb-4 border-b-2 border-[#543d2b]/80 text-center select-none">
-                {/* 1. Metadatos superiores / Subtítulo de Edición */}
-                {isAuthenticated && isEditMode ? (
-                  <div className="relative group mb-2 max-w-2xl mx-auto">
-                    <input
-                      type="text"
-                      value={config.newspaperSubhead}
-                      onChange={(e) => {
-                        setConfig(prev => ({ ...prev, newspaperSubhead: e.target.value.toUpperCase() }));
-                        setHasUnsavedChanges(true);
-                      }}
-                      placeholder="EDICIÓN EXTRAORDINARIA · REGISTRO TIPOGRÁFICO NÚM. 4.812"
-                      title="Haga clic para editar el subtítulo superior"
-                      className="w-full text-center text-[10px] sm:text-[11px] font-serif uppercase tracking-widest text-[#422c1b] bg-[#543d2b]/5 border-b border-dashed border-[#543d2b]/50 focus:border-[#543d2b] focus:bg-[#543d2b]/10 outline-none px-2 py-0.5 transition-all"
-                    />
-                    <div className="text-[9px] font-mono text-[#785b42] mt-0.5 tracking-wider">
-                      ✎ Subtítulo de Edición (editable)
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-serif uppercase tracking-widest text-[#664b35] border-b border-[#543d2b]/30 pb-1 mb-2 select-text">
-                    <span>{config.newspaperSubhead.split('·')[0]?.trim() || config.newspaperSubhead}</span>
-                    <span className="hidden sm:inline">✤ ✤ ✤</span>
-                    <span>{config.newspaperSubhead.split('·')[1]?.trim() || ''}</span>
-                  </div>
-                )}
-
-                {/* 2. Titular Principal de la Publicación (H1) */}
-                {isAuthenticated && isEditMode ? (
-                  <div className="relative group my-1">
-                    <input
-                      type="text"
-                      value={config.newspaperTitle}
-                      onChange={(e) => {
-                        setConfig(prev => ({ ...prev, newspaperTitle: e.target.value.toUpperCase() }));
-                        setHasUnsavedChanges(true);
-                      }}
-                      placeholder="TITULAR PRINCIPAL (H1)"
-                      title="Haga clic para editar el titular principal H1"
-                      className="w-full text-center text-2xl sm:text-4xl md:text-5xl font-serif font-black tracking-tight text-[#2d1b11] bg-[#543d2b]/5 border-b-2 border-dashed border-[#543d2b]/60 focus:border-[#543d2b] focus:bg-[#543d2b]/10 outline-none px-2 py-1 transition-all uppercase"
-                      style={{
-                        fontFamily: "'Playfair Display', Georgia, serif",
-                        textShadow: '0.5px 0.5px 1px rgba(35,25,15,0.3)'
-                      }}
-                    />
-                    <div className="text-[10px] font-mono text-[#785b42] mt-0.5 tracking-wider flex items-center justify-center gap-1">
-                      <span>✎ Titular Principal H1 (editable)</span>
-                    </div>
-                  </div>
-                ) : (
-                  <h1 
-                    className="text-2xl sm:text-4xl md:text-5xl font-serif font-black tracking-tight text-[#2d1b11] py-1 select-text"
+            <header className="mb-8 pb-4 border-b border-[#543d2b]/40 text-center select-none">
+              {/* Titular Principal (H1) */}
+              {isAuthenticated && isEditMode ? (
+                <div className="relative group my-2">
+                  <input
+                    type="text"
+                    value={config.newspaperTitle}
+                    onChange={(e) => {
+                      setConfig(prev => ({ ...prev, newspaperTitle: e.target.value.toUpperCase() }));
+                      setHasUnsavedChanges(true);
+                    }}
+                    placeholder="MICRORELATOS"
+                    className="w-full text-center text-4xl sm:text-5xl font-serif font-black tracking-tight text-[#2d1b11] bg-[#543d2b]/5 border-b-2 border-dashed border-[#543d2b]/30 focus:border-[#543d2b] focus:bg-[#543d2b]/10 outline-none px-2 py-1 transition-all uppercase"
                     style={{
                       fontFamily: "'Playfair Display', Georgia, serif",
-                      textShadow: '0.5px 0.5px 1px rgba(35,25,15,0.3)'
                     }}
-                  >
-                    {config.newspaperTitle}
-                  </h1>
-                )}
-
-                {/* Filete ornamental central */}
-                <div className="flex items-center justify-center gap-2 my-1 text-[#543d2b]/70">
-                  <div className="h-[1px] w-12 sm:w-28 bg-current" />
-                  <span className="text-xs font-serif">❖</span>
-                  <div className="h-[1px] w-12 sm:w-28 bg-current" />
+                  />
                 </div>
+              ) : (
+                <h1 
+                  className="text-4xl sm:text-5xl font-serif font-black tracking-tight text-[#2d1b11] py-2 select-text uppercase"
+                  style={{
+                    fontFamily: "'Playfair Display', Georgia, serif",
+                  }}
+                >
+                  {config.newspaperTitle}
+                </h1>
+              )}
+            </header>
 
-                {/* 3. Fecha y Precio (Editable) */}
-                {isAuthenticated && isEditMode ? (
-                  <div className="relative group my-1 max-w-xl mx-auto">
-                    <input
-                      type="text"
-                      value={config.newspaperDate}
-                      onChange={(e) => {
-                        setConfig(prev => ({ ...prev, newspaperDate: e.target.value }));
-                        setHasUnsavedChanges(true);
-                      }}
-                      placeholder="MARTES, 29 DE SEPTIEMBRE · PRECIO: DIEZ CÉNTIMOS"
-                      title="Haga clic para editar la fecha y precio"
-                      className="w-full text-center text-[11px] sm:text-xs font-serif italic tracking-wider text-[#422c1b] bg-[#543d2b]/5 border-b border-dashed border-[#543d2b]/50 focus:border-[#543d2b] focus:bg-[#543d2b]/10 outline-none px-2 py-0.5 transition-all"
-                    />
-                    <div className="text-[9px] font-mono text-[#785b42] mt-0.5 tracking-wider">
-                      ✎ Fecha y Precio (editable)
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-[10px] sm:text-[11px] font-serif tracking-wider text-[#664b35] italic select-text">
-                    {config.newspaperDate}
-                  </div>
-                )}
-              </header>
-            )}
-
-            {/* CUERPO CENTRAL DE TEXTO CON EFECTO DE TINTA GASTADA Y TIPOGRAFÍA DE MÁQUINA DE ESCRIBIR */}
+            {/* CUERPO CENTRAL DE TEXTO */}
             <WornInkText
               text={config.text}
               isEditable={isAuthenticated && isEditMode}
               onTextChange={handleTextChange}
-              inkWear={config.inkWear}
-              font={config.typewriterFont}
-              fontSize={config.fontSize}
-              alignment={config.alignment}
-              enableDropCap={config.enableDropCap}
-              inkColor={getInkColor()}
             />
 
-            {/* PIE DE PÁGINA DE IMPRENTA ANTIGUA */}
-            <footer className="mt-8 pt-3 border-t border-[#543d2b]/35 flex flex-col sm:flex-row items-center justify-between text-[10px] font-mono text-[#785b42] select-none gap-2">
-              <div className="flex items-center gap-1.5">
-                <span>ESTABLECIMIENTO TIPOGRÁFICO DE PRENSA</span>
-                <span>·</span>
-                <span>1924</span>
+            {/* PIE DE PÁGINA */}
+            <footer className="mt-8 pt-4 border-t border-[#543d2b]/35 flex items-center justify-between text-[11px] font-mono text-[#785b42] select-none">
+              <div className="flex items-center gap-1.5 font-serif italic">
+                {config.lastEdited}
               </div>
-              <div className="text-center italic font-serif text-[11px] text-[#5e432c]">
-                "La verdad impresa no teme al paso del tiempo"
-              </div>
-              <div className="text-right">
-                PÁG. 1 · HOJA SUELTA
+              <div className="text-right opacity-30">
+                PÁG. 1
               </div>
             </footer>
           </DecoratedBorders>

@@ -7,15 +7,9 @@ import {
   Printer,
   KeyRound,
   FileText,
-  Sliders,
-  Type,
   ChevronDown
 } from 'lucide-react';
-import { InkWearLevel, TypewriterFont, TextAlignment } from './WornInkText';
-import { BorderStyle } from './DecoratedBorders';
 import { typewriterAudio } from '../lib/typewriterAudio';
-
-export type PaperTone = 'sepia' | 'amber' | 'parchment' | 'dark-sepia';
 
 interface AdminToolbarProps {
   adminUsername: string;
@@ -25,21 +19,6 @@ interface AdminToolbarProps {
   onSave: () => void;
   onLogout: () => void;
   onOpenChangePassword: () => void;
-  // Styling controls
-  inkWear: InkWearLevel;
-  onChangeInkWear: (wear: InkWearLevel) => void;
-  typewriterFont: TypewriterFont;
-  onChangeFont: (font: TypewriterFont) => void;
-  fontSize: number;
-  onChangeFontSize: (size: number) => void;
-  paperTone: PaperTone;
-  onChangePaperTone: (tone: PaperTone) => void;
-  borderStyle: BorderStyle;
-  onChangeBorderStyle: (style: BorderStyle) => void;
-  alignment: TextAlignment;
-  onChangeAlignment: (align: TextAlignment) => void;
-  enableDropCap: boolean;
-  onToggleDropCap: () => void;
   onLoadSampleText: (type: 'initial' | 'blank' | 'chronicle' | 'literary') => void;
   onPrint: () => void;
 }
@@ -52,25 +31,10 @@ export const AdminToolbar: React.FC<AdminToolbarProps> = ({
   onSave,
   onLogout,
   onOpenChangePassword,
-  inkWear,
-  onChangeInkWear,
-  typewriterFont,
-  onChangeFont,
-  fontSize,
-  onChangeFontSize,
-  paperTone,
-  onChangePaperTone,
-  borderStyle,
-  onChangeBorderStyle,
-  alignment,
-  onChangeAlignment,
-  enableDropCap,
-  onToggleDropCap,
   onLoadSampleText,
   onPrint
 }) => {
   const [audioEnabled, setAudioEnabled] = useState(typewriterAudio.enabled);
-  const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const [showSamplesMenu, setShowSamplesMenu] = useState(false);
 
   const toggleAudio = () => {
@@ -122,21 +86,6 @@ export const AdminToolbar: React.FC<AdminToolbarProps> = ({
           >
             <Save className="w-3.5 h-3.5" />
             <span>Guardar</span>
-          </button>
-
-          {/* Ajustes de Tipografía y Tinta */}
-          <button
-            onClick={() => setShowSettingsDrawer(!showSettingsDrawer)}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-xs border transition-colors ${
-              showSettingsDrawer
-                ? 'bg-[#3d2c1d] text-[#e8d5bc] border-[#6b4e33]'
-                : 'bg-[#2a2118] text-[#c7b49f] border-[#3d2f22] hover:bg-[#34281d]'
-            }`}
-            title="Ajustar estilo de máquina, tinta y papel"
-          >
-            <Sliders className="w-3.5 h-3.5 text-[#bfa486]" />
-            <span>Estilo & Tinta</span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${showSettingsDrawer ? 'rotate-180' : ''}`} />
           </button>
 
           {/* Menú de Textos de Muestra */}
@@ -222,150 +171,6 @@ export const AdminToolbar: React.FC<AdminToolbarProps> = ({
           </button>
         </div>
       </div>
-
-      {/* PANEL DESPLEGABLE DE ESTILO Y EFECTO DE TINTA */}
-      {showSettingsDrawer && (
-        <div className="bg-[#18130f] border-t border-[#3b2b1d] px-4 py-3 text-xs">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {/* 1. Desgaste de Tinta (Worn Ink) */}
-            <div>
-              <label className="block text-[#a68c74] font-bold uppercase tracking-wider text-[10px] mb-1.5">
-                Efecto de Tinta de Máquina
-              </label>
-              <div className="flex gap-1">
-                {(['heavy', 'standard', 'fresh'] as InkWearLevel[]).map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => onChangeInkWear(level)}
-                    className={`flex-1 py-1 px-1.5 text-center rounded-xs border text-[11px] font-mono transition-colors ${
-                      inkWear === level
-                        ? 'bg-[#5c3e24] text-[#f7efe1] border-[#8a5d37]'
-                        : 'bg-[#241c15] text-[#9c846f] border-[#382a1d] hover:bg-[#30241b]'
-                    }`}
-                  >
-                    {level === 'heavy' && 'Muy Gastada'}
-                    {level === 'standard' && 'Desgastada'}
-                    {level === 'fresh' && 'Fresca'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 2. Tipografía Máquina & Tamaño */}
-            <div>
-              <div className="flex items-center justify-between text-[#a68c74] font-bold uppercase tracking-wider text-[10px] mb-1.5">
-                <span>Tipografía & Tamaño</span>
-                <span className="font-mono text-[#d6c4a8]">{fontSize}px</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={typewriterFont}
-                  onChange={(e) => onChangeFont(e.target.value as TypewriterFont)}
-                  className="bg-[#241c15] text-[#d6c4a8] border border-[#382a1d] px-2 py-1 rounded-xs text-[11px] outline-none flex-1 font-typewriter"
-                >
-                  <option value="special-elite">Special Elite (Vintage)</option>
-                  <option value="courier-prime">Courier Prime (Mecánica)</option>
-                </select>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => onChangeFontSize(Math.max(fontSize - 1, 14))}
-                    className="px-2 py-0.5 bg-[#241c15] text-[#d6c4a8] border border-[#382a1d] hover:bg-[#34261a]"
-                  >
-                    -
-                  </button>
-                  <button
-                    onClick={() => onChangeFontSize(Math.min(fontSize + 1, 26))}
-                    className="px-2 py-0.5 bg-[#241c15] text-[#d6c4a8] border border-[#382a1d] hover:bg-[#34261a]"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Tonalidad Sepia de Periódico */}
-            <div>
-              <label className="block text-[#a68c74] font-bold uppercase tracking-wider text-[10px] mb-1.5">
-                Tono Sepia de la Hoja
-              </label>
-              <div className="grid grid-cols-4 gap-1 text-[10px]">
-                <button
-                  onClick={() => onChangePaperTone('sepia')}
-                  className={`py-1 px-1 rounded-xs border text-center transition-colors ${
-                    paperTone === 'sepia'
-                      ? 'bg-[#5c3e24] text-[#f7efe1] border-[#8a5d37]'
-                      : 'bg-[#241c15] text-[#9c846f] border-[#382a1d]'
-                  }`}
-                >
-                  Sepia
-                </button>
-                <button
-                  onClick={() => onChangePaperTone('amber')}
-                  className={`py-1 px-1 rounded-xs border text-center transition-colors ${
-                    paperTone === 'amber'
-                      ? 'bg-[#5c3e24] text-[#f7efe1] border-[#8a5d37]'
-                      : 'bg-[#241c15] text-[#9c846f] border-[#382a1d]'
-                  }`}
-                >
-                  Ámbar
-                </button>
-                <button
-                  onClick={() => onChangePaperTone('parchment')}
-                  className={`py-1 px-1 rounded-xs border text-center transition-colors ${
-                    paperTone === 'parchment'
-                      ? 'bg-[#5c3e24] text-[#f7efe1] border-[#8a5d37]'
-                      : 'bg-[#241c15] text-[#9c846f] border-[#382a1d]'
-                  }`}
-                >
-                  Pergamino
-                </button>
-                <button
-                  onClick={() => onChangePaperTone('dark-sepia')}
-                  className={`py-1 px-1 rounded-xs border text-center transition-colors ${
-                    paperTone === 'dark-sepia'
-                      ? 'bg-[#5c3e24] text-[#f7efe1] border-[#8a5d37]'
-                      : 'bg-[#241c15] text-[#9c846f] border-[#382a1d]'
-                  }`}
-                >
-                  Tostado
-                </button>
-              </div>
-            </div>
-
-            {/* 4. Bordes Decorados & Alineación */}
-            <div>
-              <label className="block text-[#a68c74] font-bold uppercase tracking-wider text-[10px] mb-1.5">
-                Marco Decorado & Letra Capital
-              </label>
-              <div className="flex gap-2">
-                <select
-                  value={borderStyle}
-                  onChange={(e) => onChangeBorderStyle(e.target.value as BorderStyle)}
-                  className="bg-[#241c15] text-[#d6c4a8] border border-[#382a1d] px-2 py-1 rounded-xs text-[11px] outline-none flex-1"
-                >
-                  <option value="victorian">Filigrana Victoriana</option>
-                  <option value="classical">Doble Filete Prensa</option>
-                  <option value="artdeco">Art Déco Geométrico</option>
-                  <option value="minimal">Minimalista Fino</option>
-                </select>
-
-                <button
-                  onClick={onToggleDropCap}
-                  className={`px-2 py-1 text-[11px] rounded-xs border transition-colors flex items-center gap-1 ${
-                    enableDropCap
-                      ? 'bg-[#5c3e24] text-[#f7efe1] border-[#8a5d37]'
-                      : 'bg-[#241c15] text-[#9c846f] border-[#382a1d]'
-                  }`}
-                  title="Activar letra capital inicial ornamental"
-                >
-                  <Type className="w-3 h-3" />
-                  <span>Capital</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 };
