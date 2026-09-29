@@ -1,0 +1,8 @@
+{
+  "name": "Microrelatos",
+  "description": "Historias breves de ficción a modo de microrelato. Crónicas periódicas de misterio y literatura corta en formato de prensa clásica sepia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

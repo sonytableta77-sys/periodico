@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-typewriter {
+    font-family: 'Special Elite', 'Courier Prime', 'Courier New', Courier, monospace;
+    letter-spacing: -0.01em;
+  }
+
+  .font-typewriter-clean {
+    font-family: 'Courier Prime', 'Courier New', Courier, monospace;
+    letter-spacing: -0.015em;
+  }
+
+  .font-broadsheet {
+    font-family: 'Playfair Display', Georgia, Cambria, serif;
+  }
+
+  .font-ornate {
+    font-family: 'Cinzel', 'Playfair Display', Georgia, serif;
+  }
+
+  /* Authentic Typewriter Worn Ink Bleed */
+  .ink-worn-standard {
+    filter: url(#worn-ink-filter);
+    text-shadow: 
+      0.3px 0.2px 0.4px rgba(28, 25, 23, 0.45),
+      -0.2px -0.2px 0.4px rgba(35, 30, 26, 0.35);
+  }
+
+  .ink-worn-heavy {
+    filter: url(#heavy-worn-ink-filter);
+    opacity: 0.82;
+    text-shadow: 
+      0.4px 0.3px 0.6px rgba(45, 40, 35, 0.35),
+      -0.3px -0.1px 0.5px rgba(50, 45, 40, 0.3);
+  }
+
+  .ink-worn-fresh {
+    filter: none;
+    opacity: 0.96;
+    text-shadow: 
+      0.2px 0.2px 0.3px rgba(18, 15, 12, 0.55);
+  }
+
+  /* Paper texture overlay and depth */
+  .paper-deckle-edge {
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.12),
+      0 6px 16px rgba(0,0,0,0.18),
+      0 20px 40px rgba(0,0,0,0.22),
+      inset 0 0 40px rgba(110, 75, 40, 0.08),
+      inset 0 0 100px rgba(80, 50, 20, 0.06);
+  }
+
+  .sepia-grain {
+    background-image: radial-gradient(circle at 50% 50%, rgba(255, 250, 240, 0.12) 0%, rgba(120, 85, 45, 0.06) 100%);
+  }
+}
+
+@media print {
+  body {
+    background: transparent !important;
+    color: #1a1510 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-page {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 1.5cm !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: transparent !important;
+  }
+}
