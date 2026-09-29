@@ -3,6 +3,7 @@ export interface Story {
   title: string;
   text: string;
   date: string;
+  order: number;
 }
 
 export const initialStories: Story[] = [
@@ -14,7 +15,8 @@ export const initialStories: Story[] = [
 —No se preocupe por el retraso —murmuró la figura envuelta en gabardina que acababa de cruzar el umbral sin hacer sonar la campanilla—. Vengo a reclamar las horas que perdí aquel otoño de mil novecientos veinticuatro.
 
 Don Aurelio levantó la vista por encima de sus lentes. La ficción tiene paciencia infinita, y la verdad siempre llega con retraso.`,
-    date: '29 DE SEPTIEMBRE DE 2026'
+    date: '29 DE SEPTIEMBRE DE 2026',
+    order: 1
   },
   {
     id: '2',
@@ -25,6 +27,7 @@ A medianoche exacta, una locomotora a vapor frenaba sin chirriar sobre los riele
 
 El revisor siempre decía lo mismo:
 —Próxima parada: las palabras que debiste pronunciar a tiempo.`,
-    date: '28 DE SEPTIEMBRE DE 2026'
+    date: '28 DE SEPTIEMBRE DE 2026',
+    order: 2
   }
 ];

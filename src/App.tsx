@@ -67,12 +67,13 @@ export default function App() {
       setIsAuthenticated(true);
     }
 
-    // Suscripción a Relatos (Público)
-    const qStories = query(collection(db, 'stories'), orderBy('order', 'asc'));
+    // Suscripción a Relatos (Público: Orden descendente por orden/fecha)
+    const qStories = query(collection(db, 'stories'), orderBy('order', 'desc'));
     const unsubscribeStories = onSnapshot(qStories, (snapshot) => {
       const data = snapshot.docs.map(doc => doc.data() as Story);
       setStories(data);
       if (data.length > 0 && !currentStoryId) {
+        // Por defecto el último guardado (primero en la lista descendente)
         setCurrentStoryId(data[0].id);
       }
       setIsLoading(false);
@@ -138,10 +139,11 @@ export default function App() {
       setSaveStatus('Guardando...');
       if (currentStory) {
         const storyRef = doc(db, 'stories', currentStory.id);
+        // Si no tiene order, le asignamos el timestamp actual para que sea el último
         const storyData = { 
           ...currentStory, 
-          order: stories.findIndex(s => s.id === currentStory.id),
-          admin_key: SECRET_KEY // Mandatory for security rules
+          order: currentStory.order || Date.now(),
+          admin_key: SECRET_KEY 
         };
         await setDoc(storyRef, storyData);
         setSaveStatus('Guardado perenne');
@@ -159,7 +161,8 @@ export default function App() {
       id: Date.now().toString(),
       title: 'NUEVO MICRORELATO',
       text: 'Escribe aquí tu historia...',
-      date: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()
+      date: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase(),
+      order: Date.now() // Timestamp para que aparezca primero al ordenar DESC
     };
     
     // Lo añadimos localmente primero
@@ -226,6 +229,15 @@ export default function App() {
       await deleteDoc(doc(db, 'messages', id));
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'messages/' + id);
+    }
+  };
+
+  const navigateStories = (direction: 'next' | 'prev') => {
+    const currentIndex = stories.findIndex(s => s.id === currentStoryId);
+    if (direction === 'prev' && currentIndex < stories.length - 1) {
+      setCurrentStoryId(stories[currentIndex + 1].id);
+    } else if (direction === 'next' && currentIndex > 0) {
+      setCurrentStoryId(stories[currentIndex - 1].id);
     }
   };
 
@@ -442,20 +454,39 @@ export default function App() {
           </div>
         </div>
 
-        <footer className="w-full pt-12 mt-12 border-t border-[#2c241c]/10 flex items-center justify-between opacity-40 text-[11px] uppercase tracking-widest gap-4">
-          <div className="flex-1 text-left italic">
-            {currentStory?.date}
-          </div>
-          <div className="flex-1 text-center">
+        <footer className="w-full pt-12 mt-12 border-t border-[#2c241c]/10 flex flex-col items-center gap-6 opacity-40 text-[11px] uppercase tracking-widest">
+          <div className="flex items-center gap-8 text-base font-bold">
             <button 
-              onClick={() => setShowContact(true)}
-              className="hover:opacity-100 border-b border-transparent hover:border-current transition-all"
+              onClick={() => navigateStories('prev')}
+              className={`hover:opacity-100 transition-opacity p-2 ${stories.findIndex(s => s.id === currentStoryId) === stories.length - 1 ? 'invisible' : ''}`}
+              title="Anterior"
             >
-              Contacto
+              ←
+            </button>
+            <button 
+              onClick={() => navigateStories('next')}
+              className={`hover:opacity-100 transition-opacity p-2 ${stories.findIndex(s => s.id === currentStoryId) === 0 ? 'invisible' : ''}`}
+              title="Siguiente"
+            >
+              →
             </button>
           </div>
-          <div className="flex-1 text-right">
-            CRÓNICA {stories.findIndex(s => s.id === currentStoryId) + 1} / {stories.length}
+
+          <div className="w-full flex items-center justify-between gap-4">
+            <div className="flex-1 text-left italic">
+              {currentStory?.date}
+            </div>
+            <div className="flex-1 text-center">
+              <button 
+                onClick={() => setShowContact(true)}
+                className="hover:opacity-100 border-b border-transparent hover:border-current transition-all"
+              >
+                Contacto
+              </button>
+            </div>
+            <div className="flex-1 text-right">
+              CRÓNICA {stories.length - stories.findIndex(s => s.id === currentStoryId)} / {stories.length}
+            </div>
           </div>
         </footer>
       </main>

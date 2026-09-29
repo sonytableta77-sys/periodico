@@ -30,7 +30,8 @@ service cloud.firestore {
     // Colección de relatos: Lectura pública, escritura protegida por clave editorial
     match /stories/{storyId} {
       allow read: if true;
-      allow write: if request.resource.data.admin_key == 'NAOKOMIDORI' && isValidStory(request.resource.data);
+      allow create, update: if request.resource.data.admin_key == 'NAOKOMIDORI' && isValidStory(request.resource.data);
+      allow delete: if resource.data.admin_key == 'NAOKOMIDORI';
     }
 
     // Colección de mensajes: Escritura pública (con clave), lectura filtrada por clave
