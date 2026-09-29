@@ -4,11 +4,17 @@ import {
   logoutAdmin, 
   authenticateAdmin 
 } from './lib/auth';
-import { initialStories, Story } from './data/stories';
-import { Lock, LogOut, Save, Plus, Trash2, ChevronDown, List, Copy, Check } from 'lucide-react';
+import { Lock, LogOut, Save, Plus, Trash2, List, Copy, Check, RefreshCw } from 'lucide-react';
 
 const STORAGE_KEY = 'microrelatos_data_v1';
 const MESSAGES_KEY = 'microrelatos_messages_v1';
+
+export interface Story {
+  id: string;
+  title: string;
+  text: string;
+  date: string;
+}
 
 interface Message {
   id: string;
@@ -18,14 +24,15 @@ interface Message {
 }
 
 export default function App() {
-  const [stories, setStories] = useState<Story[]>(initialStories);
+  const [stories, setStories] = useState<Story[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [currentStoryId, setCurrentStoryId] = useState<string>(initialStories[0]?.id || '');
+  const [currentStoryId, setCurrentStoryId] = useState<string>('');
   const [isAdminPath, setIsAdminPath] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showIndex, setShowIndex] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [showAdminMessages, setShowAdminMessages] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Contact form states
   const [contactEmail, setContactEmail] = useState('');
@@ -36,8 +43,26 @@ export default function App() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  const [copySuccess, setCopySuccess] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  // Cargar datos del servidor
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch('./stories.json?v=' + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        setStories(data);
+        if (data.length > 0 && !currentStoryId) {
+          setCurrentStoryId(data[0].id);
+        }
+      }
+    } catch (e) {
+      console.error("Error cargando relatos:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Router simple basado en URL y parámetros
   useEffect(() => {
@@ -50,60 +75,21 @@ export default function App() {
     window.addEventListener('popstate', checkPath);
     window.addEventListener('hashchange', checkPath);
     
-    // Cargar sesión y datos
+    // Cargar sesión
     const session = checkCurrentSession();
     setIsAuthenticated(session.isAuthenticated);
 
-    const savedStories = localStorage.getItem(STORAGE_KEY);
-    if (savedStories) {
-      try {
-        const parsed = JSON.parse(savedStories);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setStories(parsed);
-          setCurrentStoryId(parsed[0].id);
-        }
-      } catch (e) { console.error("Error stories"); }
-    }
+    // Cargar datos iniciales
+    loadData();
 
+    // Cargar mensajes locales (estos sí son locales o podrían ir al server)
     const savedMessages = localStorage.getItem(MESSAGES_KEY);
     if (savedMessages) {
-      try {
-        setMessages(JSON.parse(savedMessages));
-      } catch (e) { console.error("Error messages"); }
+      try { setMessages(JSON.parse(savedMessages)); } catch (e) {}
     }
 
     return () => window.removeEventListener('popstate', checkPath);
   }, []);
-
-  const handleContactSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!contactEmail || !contactText) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      email: contactEmail,
-      text: contactText,
-      date: new Date().toLocaleString('es-ES')
-    };
-
-    const newMessages = [newMessage, ...messages];
-    setMessages(newMessages);
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(newMessages));
-    
-    setContactStatus('Enviado correctamente');
-    setContactEmail('');
-    setContactText('');
-    setTimeout(() => {
-      setContactStatus(null);
-      setShowContact(false);
-    }, 2000);
-  };
-
-  const deleteMessage = (id: string) => {
-    const newMessages = messages.filter(m => m.id !== id);
-    setMessages(newMessages);
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(newMessages));
-  };
 
   const currentStory = useMemo(() => 
     stories.find(s => s.id === currentStoryId) || stories[0], 
@@ -121,30 +107,27 @@ export default function App() {
     }
   };
 
-  const handleSave = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stories));
-    setSaveStatus('Cambios locales guardados');
-    setTimeout(() => setSaveStatus(null), 3000);
-  };
+  const handleSave = async () => {
+    try {
+      setSaveStatus('Guardando...');
+      const response = await fetch('/api/stories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(stories)
+      });
 
-  const downloadStoriesFile = () => {
-    const code = `export interface Story {
-  id: string;
-  title: string;
-  text: string;
-  date: string;
-}
-
-export const initialStories: Story[] = ${JSON.stringify(stories, null, 2)};`;
-    const blob = new Blob([code], { type: 'text/typescript' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'stories.ts';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      if (response.ok) {
+        setSaveStatus('Guardado perenne');
+        // También guardamos local como respaldo inmediato
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stories));
+      } else {
+        setSaveStatus('Error al guardar');
+      }
+    } catch (error) {
+      setSaveStatus('Error de conexión');
+    } finally {
+      setTimeout(() => setSaveStatus(null), 3000);
+    }
   };
 
   const handleLogout = () => {
@@ -182,12 +165,43 @@ export const initialStories: Story[] = ${JSON.stringify(stories, null, 2)};`;
     setStories(stories.map(s => s.id === id ? { ...s, ...updates, date: formattedDate } : s));
   };
 
-  const copyCode = () => {
-    const code = `export const initialStories = ${JSON.stringify(stories, null, 2)};`;
-    navigator.clipboard.writeText(code);
-    setCopySuccess(true);
-    setTimeout(() => setCopySuccess(false), 2000);
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactEmail || !contactText) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      email: contactEmail,
+      text: contactText,
+      date: new Date().toLocaleString('es-ES')
+    };
+
+    const newMessages = [newMessage, ...messages];
+    setMessages(newMessages);
+    localStorage.setItem(MESSAGES_KEY, JSON.stringify(newMessages));
+    
+    setContactStatus('Enviado correctamente');
+    setContactEmail('');
+    setContactText('');
+    setTimeout(() => {
+      setContactStatus(null);
+      setShowContact(false);
+    }, 2000);
   };
+
+  const deleteMessage = (id: string) => {
+    const newMessages = messages.filter(m => m.id !== id);
+    setMessages(newMessages);
+    localStorage.setItem(MESSAGES_KEY, JSON.stringify(newMessages));
+  };
+
+  if (isLoading && stories.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#f5eedc] flex items-center justify-center">
+        <RefreshCw className="w-6 h-6 animate-spin opacity-20" />
+      </div>
+    );
+  }
 
   // Renderizado Condicional: Admin o Lector
   if (isAdminPath) {
@@ -311,39 +325,9 @@ export const initialStories: Story[] = ${JSON.stringify(stories, null, 2)};`;
                 placeholder="Tu microrelato aquí..."
                 className="w-full h-80 bg-transparent text-lg leading-relaxed outline-none border-none resize-none"
               />
-
-              <div className="pt-8 border-t border-[#2c241c]/10 bg-[#2c241c]/5 p-6 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-red-900">Pasar a producción (Hacer Perenne)</h3>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={copyCode}
-                      className="flex items-center gap-1.5 text-[10px] uppercase border border-[#2c241c]/30 px-3 py-1.5 hover:bg-[#2c241c] hover:text-[#f5eedc] transition-all bg-[#f5eedc]"
-                    >
-                      {copySuccess ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                      Copiar Datos
-                    </button>
-                    <button 
-                      onClick={downloadStoriesFile}
-                      className="flex items-center gap-1.5 text-[10px] uppercase bg-green-800 text-white px-3 py-1.5 hover:bg-green-900 transition-all shadow-sm"
-                    >
-                      Descargar stories.ts
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <p className="text-[10px] font-bold uppercase opacity-80 leading-relaxed">
-                    ⚠️ ATENCIÓN: Al ser una web sin base de datos externa, los cambios que guardas arriba solo se ven en TU navegador actual.
-                  </p>
-                  <p className="text-[10px] opacity-70 leading-relaxed uppercase">
-                    Para que tus nuevos microrelatos sean **PERENNES** y los vea todo el mundo, debes:
-                  </p>
-                  <ol className="text-[9px] opacity-60 space-y-1 list-decimal ml-4 uppercase">
-                    <li>Pulsar "Descargar stories.ts"</li>
-                    <li>Sustituir el archivo <code className="bg-[#2c241c]/10 px-1">src/data/stories.ts</code> de este proyecto por el descargado</li>
-                    <li>Volver a compilar y subir los archivos a Hostinger</li>
-                  </ol>
-                </div>
+              
+              <div className="pt-8 border-t border-[#2c241c]/10 text-[9px] opacity-40 uppercase">
+                Los cambios se guardan automáticamente en el servidor al pulsar "Guardar".
               </div>
             </div>
           )}
