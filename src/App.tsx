@@ -31,7 +31,7 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentStoryId, setCurrentStoryId] = useState<string>('');
   const [isAdminPath, setIsAdminPath] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showIndex, setShowIndex] = useState(false);
   const [showContact, setShowContact] = useState(false);
   const [showAdminMessages, setShowAdminMessages] = useState(false);
@@ -41,7 +41,13 @@ export default function App() {
   const [contactEmail, setContactEmail] = useState('');
   const [contactText, setContactText] = useState('');
   const [contactStatus, setContactStatus] = useState<string | null>(null);
+
+  // Login states
+  const [adminPasscode, setAdminPasscode] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  const SECRET_KEY = 'MICRO_EDIT_2026';
 
   // Router y Auth
   useEffect(() => {
@@ -54,9 +60,11 @@ export default function App() {
     window.addEventListener('popstate', checkPath);
     window.addEventListener('hashchange', checkPath);
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-    });
+    // Simple session
+    const savedAuth = localStorage.getItem('microrelatos_auth_v2');
+    if (savedAuth === 'true') {
+      setIsAuthenticated(true);
+    }
 
     // Suscripción a Relatos (Público)
     const qStories = query(collection(db, 'stories'), orderBy('order', 'asc'));
@@ -79,53 +87,54 @@ export default function App() {
 
     return () => {
       window.removeEventListener('popstate', checkPath);
-      unsubscribeAuth();
       unsubscribeStories();
     };
   }, []);
 
   // Suscripción a Mensajes (Solo Admin)
   useEffect(() => {
-    if (user && user.email === 'sonytableta77@gmail.com') {
+    if (isAuthenticated) {
       const qMessages = query(collection(db, 'messages'), orderBy('date', 'desc'));
       const unsubscribeMessages = onSnapshot(qMessages, (snapshot) => {
         const data = snapshot.docs.map(doc => doc.data() as Message);
         setMessages(data);
       }, (error) => {
-        handleFirestoreError(error, OperationType.GET, 'messages');
+        console.error("Error loading messages:", error);
       });
       return () => unsubscribeMessages();
     }
-  }, [user]);
+  }, [isAuthenticated]);
 
   const currentStory = useMemo(() => 
     stories.find(s => s.id === currentStoryId) || stories[0], 
   [stories, currentStoryId]);
 
   const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      console.error("Error de login:", error);
+    if (adminPasscode === SECRET_KEY) {
+      setIsAuthenticated(true);
+      setLoginError(null);
+      localStorage.setItem('microrelatos_auth_v2', 'true');
+    } else {
+      setLoginError('Clave editorial incorrecta.');
     }
   };
 
   const handleLogout = () => {
-    auth.signOut();
+    setIsAuthenticated(false);
+    localStorage.removeItem('microrelatos_auth_v2');
   };
 
   const handleSave = async () => {
-    if (!user || user.email !== 'sonytableta77@gmail.com') return;
+    if (!isAuthenticated) return;
     
     try {
       setSaveStatus('Guardando...');
-      // En Firebase, guardamos cada historia individualmente o en batch
-      // Para simplificar y dado que son pocas, guardamos la actual
       if (currentStory) {
         const storyRef = doc(db, 'stories', currentStory.id);
         const storyData = { 
           ...currentStory, 
-          order: stories.findIndex(s => s.id === currentStory.id) 
+          order: stories.findIndex(s => s.id === currentStory.id),
+          admin_key: SECRET_KEY // Mandatory for security rules
         };
         await setDoc(storyRef, storyData);
         setSaveStatus('Guardado perenne');
@@ -154,7 +163,7 @@ export default function App() {
 
   const deleteStory = async (id: string) => {
     if (stories.length <= 1) return;
-    if (!user || user.email !== 'sonytableta77@gmail.com') return;
+    if (!isAuthenticated) return;
 
     try {
       await deleteDoc(doc(db, 'stories', id));
@@ -204,7 +213,7 @@ export default function App() {
   };
 
   const deleteMessage = async (id: string) => {
-    if (!user || user.email !== 'sonytableta77@gmail.com') return;
+    if (!isAuthenticated) return;
     try {
       await deleteDoc(doc(db, 'messages', id));
     } catch (error) {
@@ -222,19 +231,39 @@ export default function App() {
 
   // Renderizado Condicional: Admin o Lector
   if (isAdminPath) {
-    if (!user || user.email !== 'sonytableta77@gmail.com') {
+    if (!isAuthenticated) {
       return (
         <div className="min-h-screen bg-[#f5eedc] text-[#2c241c] font-['Special_Elite',_serif] flex items-center justify-center p-4">
           <div className="w-full max-w-xs space-y-8 text-center">
             <h1 className="text-sm tracking-[0.3em] uppercase opacity-60 font-bold">Acceso Editorial</h1>
-            <button 
-              onClick={handleLogin}
-              className="w-full bg-[#2c241c] text-[#f5eedc] py-4 text-[10px] uppercase tracking-[0.2em] font-bold flex items-center justify-center gap-3 hover:bg-black transition-colors"
-            >
-              <UserIcon className="w-4 h-4" /> Validar con Google
-            </button>
+            
+            <div className="space-y-4">
+              <input 
+                type="password"
+                placeholder="CLAVE EDITORIAL"
+                value={adminPasscode}
+                onChange={(e) => setAdminPasscode(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                className="w-full bg-transparent border-b border-[#2c241c]/30 p-2 outline-none focus:border-[#2c241c] text-sm text-center"
+              />
+              
+              <button 
+                onClick={handleLogin}
+                className="w-full bg-[#2c241c] text-[#f5eedc] py-4 text-[10px] uppercase tracking-[0.2em] font-bold flex items-center justify-center gap-3 hover:bg-black transition-colors"
+              >
+                Validar Acceso
+              </button>
+            </div>
+
+            {loginError && (
+              <div className="bg-red-50 border border-red-200 p-3 rounded">
+                <p className="text-[10px] text-red-700 uppercase font-bold leading-tight">
+                  {loginError}
+                </p>
+              </div>
+            )}
             <p className="text-[9px] opacity-40 uppercase pt-4 leading-relaxed">
-              Esta sección está restringida.<br/>Solo el administrador principal puede editar.
+              Esta sección está restringida.<br/>Introduce tu clave para redactar.
             </p>
           </div>
         </div>
@@ -279,8 +308,7 @@ export default function App() {
           </nav>
 
           <div className="pt-4 border-t border-[#2c241c]/10 space-y-2">
-            <div className="px-3 text-[9px] opacity-40 uppercase truncate">{user.email}</div>
-            <button onClick={handleLogout} className="flex items-center gap-2 text-[10px] uppercase opacity-50 hover:opacity-100 transition-opacity px-3">
+            <button onClick={handleLogout} className="flex items-center gap-2 text-[10px] uppercase opacity-50 hover:opacity-100 transition-opacity px-3 w-full text-left">
               <LogOut className="w-3 h-3" /> Cerrar Sesión
             </button>
           </div>
