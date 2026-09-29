@@ -40,7 +40,7 @@ interface AdminToolbarProps {
   onChangeAlignment: (align: TextAlignment) => void;
   enableDropCap: boolean;
   onToggleDropCap: () => void;
-  onLoadSampleText: (type: 'blank' | 'chronicle' | 'literary') => void;
+  onLoadSampleText: (type: 'initial' | 'blank' | 'chronicle' | 'literary') => void;
   onPrint: () => void;
 }
 
@@ -151,24 +151,30 @@ export const AdminToolbar: React.FC<AdminToolbarProps> = ({
             </button>
 
             {showSamplesMenu && (
-              <div className="absolute right-0 mt-1 w-52 bg-[#251d16] border border-[#523d2a] shadow-xl py-1 z-50 text-xs">
+              <div className="absolute right-0 mt-1 w-64 bg-[#251d16] border border-[#523d2a] shadow-xl py-1 z-50 text-xs">
                 <button
-                  onClick={() => { onLoadSampleText('blank'); setShowSamplesMenu(false); }}
-                  className="w-full text-left px-3 py-1.5 hover:bg-[#3d2c1e] text-[#e0cfbd] transition-colors"
+                  onClick={() => { onLoadSampleText('initial'); setShowSamplesMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-[#3d2c1e] text-[#e0cfbd] transition-colors font-medium border-b border-[#3d2c1e]"
                 >
-                  Página en Blanco (Limpia)
+                  📖 Microrelato: El Relojero (Oficial)
                 </button>
                 <button
                   onClick={() => { onLoadSampleText('chronicle'); setShowSamplesMenu(false); }}
                   className="w-full text-left px-3 py-1.5 hover:bg-[#3d2c1e] text-[#e0cfbd] transition-colors"
                 >
-                  Crónica de Prensa (1924)
+                  🚂 Microrelato: El Último Tren
                 </button>
                 <button
                   onClick={() => { onLoadSampleText('literary'); setShowSamplesMenu(false); }}
                   className="w-full text-left px-3 py-1.5 hover:bg-[#3d2c1e] text-[#e0cfbd] transition-colors"
                 >
-                  Manuscrito Literario
+                  🖋️ Microrelato: La Sombra de la Tinta
+                </button>
+                <button
+                  onClick={() => { onLoadSampleText('blank'); setShowSamplesMenu(false); }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-[#3d2c1e] text-[#a08f7d] transition-colors border-t border-[#3d2c1e]"
+                >
+                  📄 Página en Blanco (Limpia)
                 </button>
               </div>
             )}

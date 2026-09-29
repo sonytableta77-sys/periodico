@@ -11,7 +11,8 @@ import { AuthModal } from './components/AuthModal';
 import paperTexture from './assets/images/vintage_sepia_paper_1790671247445.jpg';
 import { Lock, Feather, Check, AlertCircle } from 'lucide-react';
 
-const STORAGE_KEY_CONFIG = 'sepia_newspaper_page_v1';
+const STORAGE_KEY_CONFIG = 'microrelatos_newspaper_page_v2';
+const LEGACY_STORAGE_KEY = 'sepia_newspaper_page_v1';
 
 interface PageConfig {
   text: string;
@@ -52,6 +53,7 @@ Don Aurelio levantó la vista por encima de sus lentes de carey. En la mesa de n
 };
 
 const SAMPLE_TEXTS = {
+  initial: DEFAULT_CONFIG.text,
   blank: '',
   chronicle: `MICRORELATO: EL ÚLTIMO TREN DE LAS CERO HORAS.
 
@@ -76,9 +78,23 @@ export default function App() {
 
   const [config, setConfig] = useState<PageConfig>(() => {
     try {
+      // Limpiar versiones anteriores del borrador que contengan el texto antiguo
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (legacy) {
+        if (legacy.includes('CORRESPONSAL DE ULTRAMAR') || legacy.includes('REDACCIÓN DE LA TARDE')) {
+          localStorage.removeItem(LEGACY_STORAGE_KEY);
+        }
+      }
+
       const saved = localStorage.getItem(STORAGE_KEY_CONFIG);
       if (saved) {
-        return { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        // Si el texto guardado es el texto antiguo anterior, actualizar a Microrelatos
+        if (parsed.newspaperTitle === 'EL CORRESPONSAL DE ULTRAMAR' || (parsed.text && parsed.text.includes('EN LA REDACCIÓN DE LA TARDE'))) {
+          localStorage.removeItem(STORAGE_KEY_CONFIG);
+          return DEFAULT_CONFIG;
+        }
+        return { ...DEFAULT_CONFIG, ...parsed };
       }
     } catch {
       // ignore
@@ -148,9 +164,13 @@ export default function App() {
   };
 
   // Cargar textos de muestra
-  const handleLoadSample = (type: 'blank' | 'chronicle' | 'literary') => {
+  const handleLoadSample = (type: 'initial' | 'blank' | 'chronicle' | 'literary') => {
     const textToLoad = SAMPLE_TEXTS[type];
-    setConfig(prev => ({ ...prev, text: textToLoad }));
+    setConfig(prev => ({ 
+      ...prev, 
+      text: textToLoad,
+      newspaperTitle: type === 'initial' ? 'MICRORELATOS' : prev.newspaperTitle
+    }));
     setHasUnsavedChanges(true);
   };
 
