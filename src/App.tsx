@@ -11,7 +11,7 @@ import { AuthModal } from './components/AuthModal';
 import paperTexture from './assets/images/vintage_sepia_paper_1790671247445.jpg';
 import { Lock, Feather, Check, AlertCircle } from 'lucide-react';
 
-const STORAGE_KEY_CONFIG = 'microrelatos_newspaper_page_v2';
+const STORAGE_KEY_CONFIG = 'microrelatos_v3_clean';
 const LEGACY_STORAGE_KEY = 'sepia_newspaper_page_v1';
 
 interface PageConfig {
@@ -78,23 +78,19 @@ export default function App() {
 
   const [config, setConfig] = useState<PageConfig>(() => {
     try {
-      // Limpiar versiones anteriores del borrador que contengan el texto antiguo
-      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
-      if (legacy) {
-        if (legacy.includes('CORRESPONSAL DE ULTRAMAR') || legacy.includes('REDACCIÓN DE LA TARDE')) {
-          localStorage.removeItem(LEGACY_STORAGE_KEY);
-        }
-      }
+      // Purgar inmediatamente cualquier clave de versiones anteriores
+      localStorage.removeItem('sepia_newspaper_page_v1');
+      localStorage.removeItem('microrelatos_newspaper_page_v2');
 
       const saved = localStorage.getItem(STORAGE_KEY_CONFIG);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Si el texto guardado es el texto antiguo anterior, actualizar a Microrelatos
-        if (parsed.newspaperTitle === 'EL CORRESPONSAL DE ULTRAMAR' || (parsed.text && parsed.text.includes('EN LA REDACCIÓN DE LA TARDE'))) {
+        // Descartar si contiene el título antiguo o texto antiguo
+        if (parsed.newspaperTitle !== 'MICRORELATOS' || (parsed.text && parsed.text.includes('EN LA REDACCIÓN DE LA TARDE'))) {
           localStorage.removeItem(STORAGE_KEY_CONFIG);
           return DEFAULT_CONFIG;
         }
-        return { ...DEFAULT_CONFIG, ...parsed };
+        return { ...DEFAULT_CONFIG, ...parsed, newspaperTitle: 'MICRORELATOS' };
       }
     } catch {
       // ignore
