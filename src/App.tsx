@@ -22,13 +22,17 @@ export default function App() {
   const [loginError, setLoginError] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
 
-  // Router simple basado en URL
+  // Router simple basado en URL y parámetros
   useEffect(() => {
     const checkPath = () => {
-      setIsAdminPath(window.location.pathname === '/admin');
+      const isPathAdmin = window.location.pathname.endsWith('/admin');
+      const isQueryAdmin = window.location.search.includes('mode=admin');
+      setIsAdminPath(isPathAdmin || isQueryAdmin);
     };
     checkPath();
     window.addEventListener('popstate', checkPath);
+    // Escuchar también cambios en el hash por si acaso
+    window.addEventListener('hashchange', checkPath);
     
     // Cargar sesión y datos
     const session = checkCurrentSession();
