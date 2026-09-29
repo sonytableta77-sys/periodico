@@ -14,13 +14,6 @@ export default defineConfig(() => {
     },
     build: {
       emptyOutDir: true,
-      rollupOptions: {
-        output: {
-          inlineDynamicImports: true,
-          entryFileNames: 'assets/index.js',
-          assetFileNames: 'assets/[name].[ext]'
-        }
-      }
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

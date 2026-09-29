@@ -119,27 +119,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
-    <!-- Estilos compilados listos para Hostinger -->
-    <script>
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = './assets/index.css?v=' + Date.now();
-      document.head.appendChild(link);
-    </script>
   </head>
   <body class="bg-[#f5eedc] text-[#2c241c] antialiased">
     <div id="root"></div>
-    <script type="module">
-      const isDev = location.port === '3000' || location.hostname.includes('run.app');
-      if (isDev) {
-        import('/src/main.tsx');
-      } else {
-        const s = document.createElement('script');
-        s.type = 'module';
-        s.src = './assets/index.js?v=' + Date.now();
-        document.body.appendChild(s);
-      }
-    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
 
