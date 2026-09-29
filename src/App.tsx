@@ -8,14 +8,30 @@ import { initialStories, Story } from './data/stories';
 import { Lock, LogOut, Save, Plus, Trash2, ChevronDown, List, Copy, Check } from 'lucide-react';
 
 const STORAGE_KEY = 'microrelatos_data_v1';
+const MESSAGES_KEY = 'microrelatos_messages_v1';
+
+interface Message {
+  id: string;
+  email: string;
+  text: string;
+  date: string;
+}
 
 export default function App() {
   const [stories, setStories] = useState<Story[]>(initialStories);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [currentStoryId, setCurrentStoryId] = useState<string>(initialStories[0]?.id || '');
   const [isAdminPath, setIsAdminPath] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showIndex, setShowIndex] = useState(false);
+  const [showContact, setShowContact] = useState(false);
+  const [showAdminMessages, setShowAdminMessages] = useState(false);
   
+  // Contact form states
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactText, setContactText] = useState('');
+  const [contactStatus, setContactStatus] = useState<string | null>(null);
+
   // Login states
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -31,28 +47,62 @@ export default function App() {
     };
     checkPath();
     window.addEventListener('popstate', checkPath);
-    // Escuchar también cambios en el hash por si acaso
     window.addEventListener('hashchange', checkPath);
     
     // Cargar sesión y datos
     const session = checkCurrentSession();
     setIsAuthenticated(session.isAuthenticated);
 
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const savedStories = localStorage.getItem(STORAGE_KEY);
+    if (savedStories) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed = JSON.parse(savedStories);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setStories(parsed);
           setCurrentStoryId(parsed[0].id);
         }
-      } catch (e) {
-        console.error("Error al cargar historias");
-      }
+      } catch (e) { console.error("Error stories"); }
+    }
+
+    const savedMessages = localStorage.getItem(MESSAGES_KEY);
+    if (savedMessages) {
+      try {
+        setMessages(JSON.parse(savedMessages));
+      } catch (e) { console.error("Error messages"); }
     }
 
     return () => window.removeEventListener('popstate', checkPath);
   }, []);
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactEmail || !contactText) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      email: contactEmail,
+      text: contactText,
+      date: new Date().toLocaleString('es-ES')
+    };
+
+    const newMessages = [newMessage, ...messages];
+    setMessages(newMessages);
+    localStorage.setItem(MESSAGES_KEY, JSON.stringify(newMessages));
+    
+    setContactStatus('Enviado correctamente');
+    setContactEmail('');
+    setContactText('');
+    setTimeout(() => {
+      setContactStatus(null);
+      setShowContact(false);
+    }, 2000);
+  };
+
+  const deleteMessage = (id: string) => {
+    const newMessages = messages.filter(m => m.id !== id);
+    setMessages(newMessages);
+    localStorage.setItem(MESSAGES_KEY, JSON.stringify(newMessages));
+  };
 
   const currentStory = useMemo(() => 
     stories.find(s => s.id === currentStoryId) || stories[0], 
@@ -72,7 +122,8 @@ export default function App() {
 
   const handleSave = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stories));
-    alert('Cambios guardados en el navegador. Para que sean permanentes para todos los usuarios, copia el código generado abajo y actualiza el archivo stories.ts');
+    setSaveStatus('Guardado en navegador');
+    setTimeout(() => setSaveStatus(null), 3000);
   };
 
   const handleLogout = () => {
@@ -145,71 +196,118 @@ export default function App() {
         {/* Sidebar de historias */}
         <div className="w-full md:w-64 border-r border-[#2c241c]/10 p-6 flex flex-col gap-4">
           <div className="flex justify-between items-center mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Historias</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Editor</span>
             <button onClick={addStory} className="p-1 hover:bg-[#2c241c]/5 rounded-full" title="Nueva Historia">
               <Plus className="w-4 h-4" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto space-y-1">
-            {stories.map(s => (
+          
+          <nav className="flex-1 overflow-y-auto space-y-1">
+            <div className="mb-6 space-y-1">
+              <p className="text-[9px] uppercase tracking-widest opacity-40 px-3 mb-2">Relatos</p>
+              {stories.map(s => (
+                <button 
+                  key={s.id}
+                  onClick={() => { setCurrentStoryId(s.id); setShowAdminMessages(false); }}
+                  className={`w-full text-left p-3 text-[11px] uppercase tracking-wider transition-colors ${currentStoryId === s.id && !showAdminMessages ? 'bg-[#2c241c] text-[#f5eedc]' : 'hover:bg-[#2c241c]/5'}`}
+                >
+                  {s.title || 'SIN TÍTULO'}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-[9px] uppercase tracking-widest opacity-40 px-3 mb-2">Mensajes</p>
               <button 
-                key={s.id}
-                onClick={() => setCurrentStoryId(s.id)}
-                className={`w-full text-left p-3 text-[11px] uppercase tracking-wider transition-colors ${currentStoryId === s.id ? 'bg-[#2c241c] text-[#f5eedc]' : 'hover:bg-[#2c241c]/5'}`}
+                onClick={() => setShowAdminMessages(true)}
+                className={`w-full text-left p-3 text-[11px] uppercase tracking-wider transition-colors flex items-center justify-between ${showAdminMessages ? 'bg-[#2c241c] text-[#f5eedc]' : 'hover:bg-[#2c241c]/5'}`}
               >
-                {s.title || 'SIN TÍTULO'}
+                <span>Buzón de Contacto</span>
+                {messages.length > 0 && <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${showAdminMessages ? 'bg-[#f5eedc] text-[#2c241c]' : 'bg-[#2c241c] text-[#f5eedc]'}`}>{messages.length}</span>}
               </button>
-            ))}
-          </div>
-          <button onClick={handleLogout} className="mt-4 flex items-center gap-2 text-[10px] uppercase opacity-50 hover:opacity-100 transition-opacity">
+            </div>
+          </nav>
+
+          <button onClick={handleLogout} className="mt-4 flex items-center gap-2 text-[10px] uppercase opacity-50 hover:opacity-100 transition-opacity px-3">
             <LogOut className="w-3 h-3" /> Cerrar Sesión
           </button>
         </div>
 
-        {/* Área de edición */}
-        <div className="flex-1 p-6 md:p-12 max-w-3xl mx-auto w-full space-y-8">
-          <div className="flex justify-between items-start">
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-40">Editor de Crónicas</h2>
-            <div className="flex gap-4">
-              <button onClick={() => deleteStory(currentStoryId)} className="text-red-800 text-[10px] uppercase flex items-center gap-1 opacity-50 hover:opacity-100">
-                <Trash2 className="w-3 h-3" /> Eliminar
-              </button>
-              <button onClick={handleSave} className="bg-[#2c241c] text-[#f5eedc] px-4 py-2 text-[10px] uppercase tracking-widest flex items-center gap-2">
-                <Save className="w-3 h-3" /> Guardar
-              </button>
+        {/* Área de edición o Mensajes */}
+        <div className="flex-1 p-6 md:p-12 max-w-3xl mx-auto w-full">
+          {showAdminMessages ? (
+            <div className="space-y-8 animate-in fade-in duration-500">
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-40">Mensajes de Contacto</h2>
+              {messages.length === 0 ? (
+                <p className="text-sm italic opacity-40 py-12 text-center">[ El buzón está vacío ]</p>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map(m => (
+                    <div key={m.id} className="border border-[#2c241c]/10 p-4 space-y-2 relative group">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#2c241c]/60">{m.email}</span>
+                        <span className="text-[9px] opacity-40">{m.date}</span>
+                      </div>
+                      <p className="text-sm leading-relaxed">{m.text}</p>
+                      <button 
+                        onClick={() => deleteMessage(m.id)}
+                        className="absolute bottom-4 right-4 text-red-800 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Eliminar mensaje"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <div className="space-y-8 animate-in fade-in duration-500">
+              <div className="flex justify-between items-start">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-40">Editor de Crónicas</h2>
+                <div className="flex gap-4 items-center">
+                  {saveStatus && <span className="text-[9px] uppercase text-green-700 font-bold animate-pulse">{saveStatus}</span>}
+                  <button onClick={() => deleteStory(currentStoryId)} className="text-red-800 text-[10px] uppercase flex items-center gap-1 opacity-50 hover:opacity-100">
+                    <Trash2 className="w-3 h-3" /> Eliminar
+                  </button>
+                  <button onClick={handleSave} className="bg-[#2c241c] text-[#f5eedc] px-4 py-2 text-[10px] uppercase tracking-widest flex items-center gap-2">
+                    <Save className="w-3 h-3" /> Guardar
+                  </button>
+                </div>
+              </div>
 
-          <input 
-            type="text" 
-            value={currentStory?.title || ''}
-            onChange={e => updateStory(currentStoryId, { title: e.target.value.toUpperCase() })}
-            placeholder="TÍTULO DEL RELATO"
-            className="w-full bg-transparent text-2xl border-b border-[#2c241c]/20 outline-none focus:border-[#2c241c] py-2 font-bold uppercase"
-          />
+              <input 
+                type="text" 
+                value={currentStory?.title || ''}
+                onChange={e => updateStory(currentStoryId, { title: e.target.value.toUpperCase() })}
+                placeholder="TÍTULO DEL RELATO"
+                className="w-full bg-transparent text-2xl border-b border-[#2c241c]/20 outline-none focus:border-[#2c241c] py-2 font-bold uppercase"
+              />
 
-          <textarea 
-            value={currentStory?.text || ''}
-            onChange={e => updateStory(currentStoryId, { text: e.target.value })}
-            placeholder="Tu microrelato aquí..."
-            className="w-full h-80 bg-transparent text-lg leading-relaxed outline-none border-none resize-none"
-          />
+              <textarea 
+                value={currentStory?.text || ''}
+                onChange={e => updateStory(currentStoryId, { text: e.target.value })}
+                placeholder="Tu microrelato aquí..."
+                className="w-full h-80 bg-transparent text-lg leading-relaxed outline-none border-none resize-none"
+              />
 
-          <div className="pt-8 border-t border-[#2c241c]/10">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-60">Exportar para Permanencia</h3>
-              <button 
-                onClick={copyCode}
-                className="flex items-center gap-1.5 text-[10px] uppercase border border-[#2c241c]/30 px-3 py-1.5 hover:bg-[#2c241c] hover:text-[#f5eedc] transition-all"
-              >
-                {copySuccess ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {copySuccess ? 'Copiado' : 'Copiar Código'}
-              </button>
+              <div className="pt-8 border-t border-[#2c241c]/10">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-60">Exportar para Permanencia</h3>
+                  <button 
+                    onClick={copyCode}
+                    className="flex items-center gap-1.5 text-[10px] uppercase border border-[#2c241c]/30 px-3 py-1.5 hover:bg-[#2c241c] hover:text-[#f5eedc] transition-all"
+                  >
+                    {copySuccess ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    {copySuccess ? 'Copiado' : 'Copiar Código'}
+                  </button>
+                </div>
+                <p className="text-[9px] opacity-60 leading-relaxed uppercase">
+                  Para que los cambios se guarden para todos los visitantes, haz clic en "Copiar Código" y reemplaza el contenido del archivo <code className="bg-[#2c241c]/5 px-1 font-bold">src/data/stories.ts</code> con lo copiado.
+                </p>
+              </div>
             </div>
-            <p className="text-[9px] opacity-60 leading-relaxed uppercase">
-              Para que los cambios se guarden para todos los visitantes, haz clic en "Copiar Código" y reemplaza el contenido del archivo <code className="bg-[#2c241c]/5 px-1 font-bold">src/data/stories.ts</code> con lo copiado.
-            </p>
-          </div>
+          )}
         </div>
       </div>
     );
@@ -267,15 +365,79 @@ export default function App() {
           </div>
         </div>
 
-        <footer className="w-full pt-12 mt-12 border-t border-[#2c241c]/10 flex justify-between items-end opacity-40 text-[11px] uppercase tracking-widest">
-          <div className="text-left italic">
+        <footer className="w-full pt-12 mt-12 border-t border-[#2c241c]/10 flex items-center justify-between opacity-40 text-[11px] uppercase tracking-widest gap-4">
+          <div className="flex-1 text-left italic">
             {currentStory?.date}
           </div>
-          <div className="text-right">
+          <div className="flex-1 text-center">
+            <button 
+              onClick={() => setShowContact(true)}
+              className="hover:opacity-100 border-b border-transparent hover:border-current transition-all"
+            >
+              Contacto
+            </button>
+          </div>
+          <div className="flex-1 text-right">
             CRÓNICA {stories.findIndex(s => s.id === currentStoryId) + 1} / {stories.length}
           </div>
         </footer>
       </main>
+
+      {/* Modal Contacto */}
+      {showContact && (
+        <div className="fixed inset-0 bg-black/10 backdrop-blur-[2px] flex items-center justify-center z-[60] p-4">
+          <div className="bg-[#f5eedc] border border-[#2c241c]/20 p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xs uppercase tracking-[0.3em] font-bold">Enviar Mensaje</h3>
+              <button onClick={() => setShowContact(false)} className="opacity-40 hover:opacity-100">×</button>
+            </div>
+            
+            <form onSubmit={handleContactSubmit} className="space-y-5">
+              <div className="space-y-1">
+                <label className="text-[9px] uppercase tracking-widest opacity-50">Su Correo</label>
+                <input 
+                  type="email" 
+                  required
+                  value={contactEmail}
+                  onChange={e => setContactEmail(e.target.value)}
+                  className="w-full bg-transparent border-b border-[#2c241c]/30 p-2 outline-none focus:border-[#2c241c] text-sm"
+                  placeholder="email@ejemplo.com"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] uppercase tracking-widest opacity-50">Mensaje</label>
+                <textarea 
+                  required
+                  value={contactText}
+                  onChange={e => setContactText(e.target.value)}
+                  className="w-full bg-transparent border border-[#2c241c]/10 p-3 outline-none focus:border-[#2c241c]/30 text-sm h-32 resize-none"
+                  placeholder="Escriba aquí..."
+                />
+              </div>
+              
+              {contactStatus && (
+                <p className="text-[10px] text-green-700 uppercase font-bold animate-pulse">{contactStatus}</p>
+              )}
+
+              <div className="flex justify-end gap-4 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowContact(false)}
+                  className="text-[10px] uppercase opacity-50 hover:opacity-100"
+                >
+                  Cerrar
+                </button>
+                <button 
+                  type="submit"
+                  className="bg-[#2c241c] text-[#f5eedc] px-6 py-2 text-[10px] uppercase tracking-widest font-bold hover:bg-[#3d3228]"
+                >
+                  Enviar Correo
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Estilos Globales */}
       <style dangerouslySetInnerHTML={{ __html: `
