@@ -29,13 +29,15 @@ interface PageConfig {
 }
 
 const DEFAULT_CONFIG: PageConfig = {
-  text: `EN LA REDACCIÓN DE LA TARDE.
+  text: `MICRORELATO: EL ECO DEL VIEJO RELOJERO.
 
-El tintineo del rodillo de caucho y el golpe seco de los tipos de plomo sobre el papel amarilleado marcan el ritmo pausado de otra época.
+A las siete y doce de la tarde, don Aurelio comprendió que el péndulo del reloj de pared ya no medía los segundos ordinarios, sino los instantes que alguien había olvidado vivir. En el escaparate de su taller, entre el aroma a madera seca y el polvo dorado que flotaba en el aire, las manecillas giraban con la precisión de un suspiro prestado.
 
-Esta página en blanco de periódico antiguo ha sido dispuesta con bordes ornamentados y caracteres forjados por cinta gastada. Sólo quien posea la llave de la redacción podrá alterar estas líneas impresas.
+—No se preocupe por el retraso —murmuró la figura envuelta en gabardina que acababa de cruzar el umbral sin hacer sonar la campanilla de latón—. Vengo a reclamar las horas que perdí aquel otoño de mil novecientos veinticuatro.
 
-Las palabras descansan aquí como si hubiesen sido tecleadas sobre una vieja Underwood de 1924...`,
+Don Aurelio levantó la vista por encima de sus lentes de carey. En la mesa de nogal, una pequeña caja de música comenzó a girar por sí sola, liberando una melodía que nadie había compuesto jamás. El relojero sonrió con la templanza de quien conoce los pliegues secretos del tiempo y, tomando su pinza de precisión, respondió:
+
+—Tome asiento, amigo mío. La ficción tiene paciencia infinita, y la verdad siempre llega con retraso.`,
   inkWear: 'standard',
   typewriterFont: 'special-elite',
   fontSize: 18,
@@ -44,28 +46,34 @@ Las palabras descansan aquí como si hubiesen sido tecleadas sobre una vieja Und
   alignment: 'left',
   enableDropCap: true,
   showHeader: true,
-  newspaperTitle: 'EL CORRESPONSAL DE ULTRAMAR',
-  newspaperSubhead: 'EDICIÓN EXTRAORDINARIA · REGISTRO TIPOGRÁFICO NÚM. 4.812',
-  newspaperDate: 'MARTES, 29 DE SEPTIEMBRE · PRECIO: DIEZ CÉNTIMOS'
+  newspaperTitle: 'MICRORELATOS',
+  newspaperSubhead: 'EDICIÓN EXTRAORDINARIA · HISTORIAS DE FICCIÓN Y MISTERIO',
+  newspaperDate: 'CRÓNICA LITERARIA · PRECIO: DIEZ CÉNTIMOS'
 };
 
 const SAMPLE_TEXTS = {
   blank: '',
-  chronicle: `EL MISTERIO DE LAS ANTIGUAS ROTATIVAS.
+  chronicle: `MICRORELATO: EL ÚLTIMO TREN DE LAS CERO HORAS.
 
-En el sótano del viejo edificio de la imprenta, entre bobinas de papel prensa y rodillos de zinc, aún repiquetea el eco de la medianoche. Los cronistas de antaño redactaban a contrarreloj bajo la luz de quinqué, mientras el plomo fundido daba forma a las noticias de la mañana siguiente.
+El andén número cuatro nunca figuraba en las pizarras de la estación central. Solo quienes extraviaban el billete de vuelta descubrían la verja entreabierta detrás del viejo depósito de carbón.
 
-"Nada hay más efímero que el periódico de hoy, ni más eterno que la memoria guardada en su fibra", rezaba la máxima grabada en el dintel de madera oscura. Hoy estas cuartillas de tono sepia conservan el tacto rugoso de la celulosa viva y el aroma inconfundible de la tinta de imprenta.`,
-  literary: `CUADERNO DE MÁQUINA DE ESCRIBIR.
+A medianoche exacta, una locomotora a vapor de chimenea cónica frenaba sin chirriar sobre los rieles cubiertos de musgo. No transportaba maletas ni pasajeros de paso, únicamente cartas que nunca se atrevieron a ser enviadas.
 
-I. La quietud de la cuartilla en blanco ante el martillo suspendido.
-II. El roce del carro que avanza espacio a espacio, diente a diente.
-III. El timbre sonoro que anuncia el final de la línea y el salto al abismo del siguiente párrafo.
+El revisor, con uniforme de paño azul y ojos cansados de descifrar silencios, picaba el boleto y decía siempre lo mismo:
+—Próxima parada: las palabras que debiste pronunciar a tiempo.`,
+  literary: `MICRORELATO: LA SOMBRA DE LA TINTA.
 
-Las letras no son digitales: tienen peso, relieve y la imperfección hermosa de la presión desigual de los dedos sobre las teclas redondas de baquelita.`
+Aquella mañana, el tipógrafo descubrió que las letras de plomo se movían solas dentro de la caja de composición. Cada vez que intentaba forjar una noticia ordinaria, los tipos se reordenaban para inventar una historia distinta: un faro en mitad del desierto, un marinero que coleccionaba tempestades en frascos de botica y un pájaro de hojalata que solo cantaba cuando alguien mentía por amor.
+
+Quiso avisar al director del diario, pero al mirarse las manos comprobó que sus yemas ya no estaban manchadas de tinta negra, sino de lluvia fresca de un país que todavía no existía en ningún mapa.`
 };
 
 export default function App() {
+  // Asegurar título "Microrelatos" en la pestaña del navegador
+  useEffect(() => {
+    document.title = 'Microrelatos';
+  }, []);
+
   const [config, setConfig] = useState<PageConfig>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_CONFIG);
@@ -215,7 +223,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <Feather className="w-4 h-4 text-[#d4ad7f]" />
             <span className="tracking-widest uppercase font-bold text-[#c7af93] text-[11px]">
-              Rotativa Tipográfica · Archivo de Prensa 1924
+              Microrelatos · Crónicas de Ficción
             </span>
           </div>
 

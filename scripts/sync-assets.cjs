@@ -17,4 +17,12 @@ if (fs.existsSync('dist/assets')) {
     fs.copyFileSync(path.join('dist/assets', mainCss), path.join('assets', 'index.css'));
     console.log('✅ assets/index.css actualizado para Hostinger.');
   }
+
+  // Copiar robots.txt y sitemap.xml a la raíz para acceso directo
+  if (fs.existsSync('public/robots.txt')) {
+    fs.copyFileSync('public/robots.txt', 'robots.txt');
+  }
+  if (fs.existsSync('public/sitemap.xml')) {
+    fs.copyFileSync('public/sitemap.xml', 'sitemap.xml');
+  }
 }

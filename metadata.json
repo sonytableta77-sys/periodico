@@ -1,6 +1,6 @@
 {
-  "name": "Periódico",
-  "description": "Página en blanco estilo periódico antiguo sepia con bordes decorados, tipografía clásica de máquina de escribir y efecto de tinta gastada, con autenticación segura de administrador.",
+  "name": "Microrelatos",
+  "description": "Historias breves de ficción a modo de microrelato. Crónicas periódicas de misterio y literatura corta en formato de prensa clásica sepia.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
