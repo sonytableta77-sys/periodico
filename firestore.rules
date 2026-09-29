@@ -23,7 +23,8 @@ service cloud.firestore {
       return data.id is string && 
              data.email is string && data.email.size() <= 200 &&
              data.text is string && data.text.size() <= 5000 &&
-             data.date is string;
+             data.date is string &&
+             data.admin_key is string;
     }
 
     // Colección de relatos: Lectura pública, escritura protegida por clave editorial
@@ -32,10 +33,10 @@ service cloud.firestore {
       allow write: if request.resource.data.admin_key == 'NAOKOMIDORI' && isValidStory(request.resource.data);
     }
 
-    // Colección de mensajes: Escritura pública, lectura protegida por clave editorial
+    // Colección de mensajes: Escritura pública (con clave), lectura filtrada por clave
     match /messages/{messageId} {
-      allow create: if isValidMessage(request.resource.data);
-      allow read, delete: if request.query.admin_key == 'NAOKOMIDORI' || request.resource.data.admin_key == 'NAOKOMIDORI';
+      allow create: if isValidMessage(request.resource.data) && request.resource.data.admin_key == 'NAOKOMIDORI';
+      allow read, delete: if resource.data.admin_key == 'NAOKOMIDORI';
     }
   }
 }

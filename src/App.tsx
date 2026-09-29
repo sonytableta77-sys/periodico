@@ -12,6 +12,7 @@ import {
   query,
   orderBy,
   onSnapshot,
+  where,
   handleFirestoreError,
   OperationType,
   User
@@ -94,8 +95,12 @@ export default function App() {
   // Suscripción a Mensajes (Solo Admin)
   useEffect(() => {
     if (isAuthenticated) {
-      // Necesitamos pasar la clave en la consulta para que las reglas de Firebase nos dejen leer
-      const qMessages = query(collection(db, 'messages'), orderBy('date', 'desc'));
+      // Necesitamos filtrar por la clave secreta para que las reglas de Firebase nos den permiso de lectura
+      const qMessages = query(
+        collection(db, 'messages'), 
+        where('admin_key', '==', SECRET_KEY),
+        orderBy('date', 'desc')
+      );
       
       const unsubscribeMessages = onSnapshot(qMessages, (snapshot) => {
         const data = snapshot.docs.map(doc => doc.data() as Message);
@@ -192,11 +197,12 @@ export default function App() {
     e.preventDefault();
     if (!contactEmail || !contactText) return;
 
-    const newMessage: Message = {
+    const newMessage: any = {
       id: Date.now().toString(),
       email: contactEmail,
       text: contactText,
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      admin_key: SECRET_KEY // Incluimos la clave para que sea visible por el admin
     };
 
     try {
