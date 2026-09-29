@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Página Sepia & Máquina de Escribir</title>
+    <meta name="description" content="Página en blanco estilo periódico antiguo sepia con bordes decorados, tipografía clásica de máquina de escribir y efecto de tinta gastada, con autenticación segura de administrador." />
+    <meta property="og:title" content="Página Sepia & Máquina de Escribir" />
+    <meta property="og:description" content="Página en blanco estilo periódico antiguo sepia con bordes decorados, tipografía clásica de máquina de escribir y efecto de tinta gastada, con autenticación segura de administrador." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Google Fonts for Antique Broadsheet & Vintage Typewriter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,400&family=Special+Elite&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#241f1a] text-[#2c241c] antialiased selection:bg-[#c9b28b] selection:text-[#1a140e] min-h-screen">
+    <!-- Global SVG Filter for Authentic Worn Typewriter Ink Displacement & Imperfections -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
+      <defs>
+        <!-- Standard Worn Ink -->
+        <filter id="worn-ink-filter" x="-5%" y="-5%" width="110%" height="110%" filterUnits="objectBoundingBox">
+          <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="3" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.4" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+          <feGaussianBlur in="displaced" stdDeviation="0.2" result="blurred" />
+          <feMerge>
+            <feMergeNode in="displaced" />
+            <feMergeNode in="blurred" opacity="0.6" />
+          </feMerge>
+        </filter>
+
+        <!-- Heavy Worn Ink (Faded Ribbon) -->
+        <filter id="heavy-worn-ink-filter" x="-5%" y="-5%" width="110%" height="110%" filterUnits="objectBoundingBox">
+          <feTurbulence type="fractalNoise" baseFrequency="0.065" numOctaves="4" result="heavyNoise" />
+          <feDisplacementMap in="SourceGraphic" in2="heavyNoise" scale="2.2" xChannelSelector="R" yChannelSelector="B" result="heavyDisplaced" />
+          <feGaussianBlur in="heavyDisplaced" stdDeviation="0.35" result="heavyBlurred" />
+          <feMerge>
+            <feMergeNode in="heavyDisplaced" />
+            <feMergeNode in="heavyBlurred" opacity="0.4" />
+          </feMerge>
+        </filter>
+      </defs>
+    </svg>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
