@@ -326,8 +326,8 @@ export default function App() {
                 className="w-full h-80 bg-transparent text-lg leading-relaxed outline-none border-none resize-none"
               />
               
-              <div className="pt-8 border-t border-[#2c241c]/10 text-[9px] opacity-40 uppercase">
-                Los cambios se guardan automáticamente en el servidor al pulsar "Guardar".
+              <div className="pt-8 border-t border-[#2c241c]/10 text-[9px] opacity-40 uppercase tracking-widest">
+                Los cambios se guardan permanentemente en el servidor al pulsar "Guardar".
               </div>
             </div>
           )}
