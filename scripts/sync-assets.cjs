@@ -10,7 +10,7 @@ if (fs.existsSync('dist/assets')) {
   fs.cpSync('dist/assets', 'assets', { recursive: true });
 
   // Leer dist/index.html para obtener exactamente los archivos vinculados por Vite
-  const distHtml = fs.readFileSync('dist/index.html', 'utf8');
+  let distHtml = fs.readFileSync('dist/index.html', 'utf8');
 
   // Encontrar el bundle JavaScript principal exacto
   const jsMatch = distHtml.match(/src="(?:\.\/)?assets\/([^"]+\.js)"/);
@@ -18,6 +18,9 @@ if (fs.existsSync('dist/assets')) {
     const mainJs = jsMatch[1];
     fs.copyFileSync(path.join('dist/assets', mainJs), path.join('assets', 'index.js'));
     console.log(`✅ assets/index.js vinculado al bundle real: ${mainJs}`);
+    
+    // Parchear el HTML para usar el nombre fijo y añadir cache busting
+    distHtml = distHtml.replace(jsMatch[0], `src="./assets/index.js?v=${Date.now()}"`);
   }
 
   // Encontrar el bundle CSS principal exacto
@@ -26,7 +29,14 @@ if (fs.existsSync('dist/assets')) {
     const mainCss = cssMatch[1];
     fs.copyFileSync(path.join('dist/assets', mainCss), path.join('assets', 'index.css'));
     console.log(`✅ assets/index.css vinculado a la hoja de estilo real: ${mainCss}`);
+    
+    // Parchear el HTML para usar el nombre fijo y añadir cache busting
+    distHtml = distHtml.replace(cssMatch[0], `href="./assets/index.css?v=${Date.now()}"`);
   }
+
+  // Escribir el index.html parcheado en la raíz para fácil despliegue
+  fs.writeFileSync('index.html', distHtml);
+  console.log('✅ index.html de raíz actualizado para producción en Hostinger');
 
   // Copiar robots.txt y sitemap.xml a la raíz para acceso directo
   if (fs.existsSync('public/robots.txt')) {
