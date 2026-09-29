@@ -47,7 +47,7 @@ export default function App() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
-  const SECRET_KEY = 'MICRO_EDIT_2026';
+  const SECRET_KEY = 'NAOKOMIDORI';
 
   // Router y Auth
   useEffect(() => {
@@ -94,7 +94,9 @@ export default function App() {
   // Suscripción a Mensajes (Solo Admin)
   useEffect(() => {
     if (isAuthenticated) {
+      // Necesitamos pasar la clave en la consulta para que las reglas de Firebase nos dejen leer
       const qMessages = query(collection(db, 'messages'), orderBy('date', 'desc'));
+      
       const unsubscribeMessages = onSnapshot(qMessages, (snapshot) => {
         const data = snapshot.docs.map(doc => doc.data() as Message);
         setMessages(data);

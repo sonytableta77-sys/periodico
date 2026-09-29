@@ -29,13 +29,13 @@ service cloud.firestore {
     // Colección de relatos: Lectura pública, escritura protegida por clave editorial
     match /stories/{storyId} {
       allow read: if true;
-      allow write: if request.resource.data.admin_key == 'MICRO_EDIT_2026' && isValidStory(request.resource.data);
+      allow write: if request.resource.data.admin_key == 'NAOKOMIDORI' && isValidStory(request.resource.data);
     }
 
     // Colección de mensajes: Escritura pública, lectura protegida por clave editorial
     match /messages/{messageId} {
       allow create: if isValidMessage(request.resource.data);
-      allow read, delete: if request.query.admin_key == 'MICRO_EDIT_2026';
+      allow read, delete: if request.query.admin_key == 'NAOKOMIDORI' || request.resource.data.admin_key == 'NAOKOMIDORI';
     }
   }
 }
