@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "Story": {
+      "title": "Microrelato",
+      "description": "Un microrelato de ficción.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "text": { "type": "string" },
+        "date": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "title", "text", "date", "order"]
+    },
+    "Message": {
+      "title": "Mensaje de Contacto",
+      "description": "Un mensaje enviado a través del formulario de contacto.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "text": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "email", "text", "date"]
+    }
+  },
+  "firestore": {
+    "/stories/{storyId}": {
+      "schema": "Story",
+      "description": "Colección de relatos."
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Colección de mensajes de contacto."
+    }
+  }
+}

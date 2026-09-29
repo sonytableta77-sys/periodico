@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidStory(data) {
+      return data.id is string && 
+             data.title is string && data.title.size() <= 200 &&
+             data.text is string && data.text.size() <= 10000 &&
+             data.date is string &&
+             data.order is number;
+    }
+
+    function isValidMessage(data) {
+      return data.id is string && 
+             data.email is string && data.email.size() <= 200 &&
+             data.text is string && data.text.size() <= 5000 &&
+             data.date is string;
+    }
+
+    // Colección de relatos: Lectura pública, escritura para el admin (usuario específico)
+    match /stories/{storyId} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.token.email == 'sonytableta77@gmail.com' && isValidStory(request.resource.data);
+    }
+
+    // Colección de mensajes: Escritura pública (creación), lectura para el admin
+    match /messages/{messageId} {
+      allow create: if isValidMessage(request.resource.data);
+      allow read, delete: if isSignedIn() && request.auth.token.email == 'sonytableta77@gmail.com';
+    }
+  }
+}
